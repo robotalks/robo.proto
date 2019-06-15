@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package robo.l1.v1;
+
+option go_package = "l1";
+
+// Typed is the container message wrapping a message of specific type.
+// The wrapped message is stored as a byte array and needs to be decoded
+// according to type_id.
+message Typed {
+    // type_id indicates the actual message type to decode the message.
+    // bit 31 is reserved to indicate the message is a command (expecting
+    // a response) or an event (no response expected).
+    // bit 16..30 is used as message group, and bit 0..15 are type ID inside
+    // the message group.
+    uint32 type_id = 1;
+
+    // sequence is set on command messages (request and response).
+    // The value is set by the requestor.
+    // It's possible the commands are executed in arbitrary orders, the responses
+    // must match the same sequence in requests.
+    uint32 sequence = 2;
+
+    // message is the raw encoded message.
+    bytes message = 3;
+}
+
+// CommandOK is a general reply indicating success for commands.
+message CommandOK {
+}
+
+// CommandErr delivers a generic error response for
+// command messages.
+message CommandErr {
+    string message = 3;
+}
+
+// Coordinations:
+//   +X: front/forward
+//   +Y: left
+//   +Z: up
+
+// Units: metric units are used.
+//   speed: mm/s
+//   accel: mm/(s^2)
+//   angle: radians
+//   time: milliseconds (1/1000 second)
+
+// 2D Navigation commands
+
+// Nav2DCapsQuery queries the capabilities of 2D navigation.
+message Nav2DCapsQuery {
+}
+
+// Nav2DCaps is the result of Nav2DCapsQuery.
+message Nav2DCaps {
+    // drive_speed_min and drive_speed_max is the min/max speed the device is
+    // able to drive with Nav2DDrive command. drive_speed_min is optional, 
+    // however, it's recommended as some device won't move with a speed below
+    // certain value.
+    float drive_speed_min = 1;
+    float drive_speed_max = 2;
+
+    // min/max speeds for Nav2DTurn command.
+    float turn_speed_min = 3;
+    float turn_speed_max = 4;
+}
+
+// Nav2DDrive moves forward/backward with specified speed.
+// Acceleration is optional.
+// Sending Nav2DDrive will stop in-progress NavTurn.
+message Nav2DDrive {
+    // stablized speed of motion, 0 to stop.
+    // positive value for forward, negative value for backward.
+    float speed = 1;
+    float accelation = 2;
+}
+
+// Nav2DTurn starts/stops turning in the specified direction and speed.
+// Sending NavTurn will stop in-progress NavDrive.
+message Nav2DTurn {
+    // turning speed, in radians/s, 0 to stop.
+    // right-hand rule: positive for left, negative for right.
+    float speed = 1;
+}
